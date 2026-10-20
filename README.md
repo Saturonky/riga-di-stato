@@ -20,6 +20,14 @@ Nell'app desktop, dove `/plugin` non funziona: clic su **+** accanto al riquadro
 
 Si risponde `y` per aggiungere il marketplace e si sceglie lo scope (utente, il primo). La Mod è attiva subito. Se in `settings.json` c'è già una `statusLine` a comando, conviene toglierla, per non avere due righe.
 
+## Requisiti e limiti
+
+- **Claude Code con le Mod.** È scritta e provata su Claude Code 2.1.304. L'API delle Mod (gli hook in TypeScript) è in accesso anticipato e cambia tra una versione e l'altra: con una versione più vecchia la Mod può non caricarsi o caricarsi in parte. Il manifest non ha un campo per imporre una versione minima: conviene aggiornare Claude Code prima di installarla.
+- **Policy dell'organizzazione.** Un'organizzazione può disattivare le Mod: in quel caso il plugin risulta installato ma non fa nulla.
+- **Pannello di fianco alla chat.** Serve il layout fullscreen di Claude Code e un terminale largo almeno 110 colonne. Altrimenti, per esempio dentro tmux, con `CLAUDE_CODE_NO_FLICKER=0`, in un terminale stretto o nel terminale integrato di un editor, il pannello è un blocco di 16 righe sopra il prompt: il resto si vede scorrendo, dopo aver dato il fuoco al pannello. Una dimensione scelta a mano trascinando il bordo vale più di quella chiesta dalla Mod.
+- **Dati dall'installazione in poi.** La Mod registra ciò che entra nel contesto mentre è attiva. Le sezioni del system prompt compaiono dalla richiesta successiva; il primo messaggio e i file `CLAUDE.md` solo in una conversazione nuova (`/clear` o una nuova sessione). Installata a sessione avviata, mostra meno dati finché non si riparte.
+- **Terminale.** La riga di stato usa alcune emoji e caratteri Unicode (`⎇`, `█`, `▏`): un font che non li ha li disegna male.
+
 ## La riga di stato
 
 Sempre quattro cose: cartella e ramo git, contesto (percentuale e token sulla finestra), costo della sessione, modello.
