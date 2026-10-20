@@ -1,0 +1,12 @@
+{
+  "name": "riga-di-stato",
+  "description": "La Mod riga-di-stato per Claude Code.",
+  "owner": { "name": "Saturonky" },
+  "plugins": [
+    {
+      "name": "riga-di-stato",
+      "description": "La riga di stato come Mod, con il pannello /contesto: finestra di contesto, token, cache, costo, limiti e ordine di caricamento.",
+      "source": "./"
+    }
+  ]
+}
