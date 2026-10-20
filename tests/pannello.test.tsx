@@ -93,6 +93,15 @@ test('riga di stato essenziale, allarmi solo quando servono, pannello entro la l
     }
   }
 
+  // Sopra il prompt, con poco spazio: l'ultima riga visibile dice che sotto c'è altro.
+  const ridotto = await $.ui.mount({
+    ...PANNELLO,
+    props: { ...props(80), placement: 'inline', scroll: { offset: 0, bodyRows: 10 } },
+    surface: 'terminal',
+  })
+  expect(await ridotto.find({ type: 'Text', text: /↓ altre \d+ righe/ })).toBeDefined()
+  await ridotto.unmount()
+
   limite5h = 86
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
   if (MOSTRA) console.log(`riga con allarme: ${stato}`)

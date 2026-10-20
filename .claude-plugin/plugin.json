@@ -1,6 +1,6 @@
 {
   "name": "riga-di-stato",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "La riga di stato come Mod: contesto, costo e modello sempre, cache, limiti e autocompact solo quando vanno guardati; con /contesto, il pannello di che cosa entra nel contesto e in che ordine.",
   "types": "./types/index.d.ts",
   "author": {

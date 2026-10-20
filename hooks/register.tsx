@@ -16,7 +16,11 @@ const MAX_RIGHE = 400
 const MAX_RICHIESTE = 200
 /** Quanto chiede il pannello: largo di fianco alla chat, basso sopra il prompt. */
 const DOCK_COLONNE = 46
-const INLINE_RIGHE = 16
+/** Il motore mette il pannello di fianco alla chat solo nel fullscreen e da questa larghezza. */
+const DOCK_MIN_COLONNE = 110
+/** Sopra il prompt: almeno il riepilogo intero, al più questa quota dell'altezza del terminale. */
+const INLINE_MIN = 18
+const INLINE_QUOTA = 0.6
 /** Oltre questa larghezza il contenuto non si allarga: resta una colonna leggibile. */
 const MAX_LARGHEZZA = 72
 /** Quando un dato diventa un allarme nella riga di stato. */
@@ -188,6 +192,10 @@ const nomeModello = (m: string): string => m.replace(/^claude-/, '').replace(/\s
 let ramo: string | undefined
 let cartella = ''
 let colonne = 120
+let righeTerminale = 0
+/** L'altezza chiesta per il pannello sopra il prompt, e se un nuovo ridimensionamento è in arrivo. */
+let altezzaChiesta = 0
+let ridimensiona = false
 let spaccato: { at: number; valore: SessionContextBreakdown | undefined } = { at: 0, valore: undefined }
 let pianificato = false
 
@@ -219,6 +227,15 @@ function notaColonne($: Motore, n: number | undefined): void {
   colonne = n
   pianifica($)
 }
+
+/** Le righe da chiedere sopra il prompt per un contenuto alto `contenuto`: tutto, fino al tetto. */
+function altezzaInline(contenuto: number): number {
+  const tetto = righeTerminale ? Math.max(INLINE_MIN, Math.floor(righeTerminale * INLINE_QUOTA)) : 30
+  return Math.max(1, Math.min(contenuto, tetto))
+}
+
+const apriPannello = ($: Motore, rows: number) =>
+  $.ui.open({ id: PANNELLO, title: 'Contesto', rows, columns: DOCK_COLONNE, closeOnEscape: true })
 
 // --- la riga di stato ----------------------------------------------------------------------------
 
@@ -387,14 +404,28 @@ export const register: Register = on => {
       await $.ui.close({ id: PANNELLO })
       return { text: 'Pannello del contesto chiuso.' }
     }
-    const r = await $.ui.open({ id: PANNELLO, title: 'Contesto', rows: INLINE_RIGHE, columns: DOCK_COLONNE, closeOnEscape: true })
-    if (r.isPlaced) return { text: 'Pannello del contesto aperto.' }
+    altezzaChiesta = altezzaChiesta || altezzaInline(INLINE_MIN)
+    const r = await apriPannello($, altezzaChiesta)
+    if (r.isPlaced) {
+      const p = e.presentation
+      if (p && (!p.isFullscreen || p.columns < DOCK_MIN_COLONNE)) {
+        const manca = [
+          p.isFullscreen ? '' : 'il layout fullscreen (ora non attivo: per esempio dentro tmux o con CLAUDE_CODE_NO_FLICKER=0)',
+          p.columns < DOCK_MIN_COLONNE ? `almeno ${DOCK_MIN_COLONNE} colonne (ora ${p.columns})` : '',
+        ].filter(Boolean)
+        return { text: `Pannello del contesto aperto sopra il prompt. Per averlo di fianco alla chat serve ${manca.join(' e ')}.` }
+      }
+      return { text: 'Pannello del contesto aperto.' }
+    }
     return { text: riassunto(await $.session.usage(), await leggiSpaccato($, 0)) }
   })
 
   // La larghezza del terminale, letta dal disegno della banda sopra il prompt: non disegna nulla.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    if (e.surface === 'terminal') notaColonne($, e.viewport?.columns)
+    if (e.surface === 'terminal') {
+      notaColonne($, e.viewport?.columns)
+      if (e.viewport?.rows) righeTerminale = e.viewport.rows
+    }
     return next(e)
   })
 
@@ -514,6 +545,7 @@ export const register: Register = on => {
     const M = 2
     const Wc = W - M
     if (e.surface === 'terminal' && e.props.placement === 'inline') notaColonne($, e.viewport?.columns)
+    if (e.viewport?.rows) righeTerminale = e.viewport.rows
     const aperta = await read($, vista)
     const sezioniChiuse = await read($, chiuse)
 
@@ -762,6 +794,30 @@ export const register: Register = on => {
         if (l.resetsAt) corpo.push(nota(`${spazi(6)}riparte ${quando(l.resetsAt)}`))
         corpo.push(vuota())
       }
+    }
+
+    // Sopra il prompt il blocco prende l'altezza del contenuto, fino al tetto: il riepilogo sempre intero.
+    // Il nuovo ordine di apertura parte da un timer, fuori dal disegno; a contenuto invariato non riparte.
+    const totale = corpo.length
+    if (e.props.placement === 'inline') {
+      const voluta = altezzaInline(totale)
+      if (voluta !== altezzaChiesta && !ridimensiona) {
+        ridimensiona = true
+        $.clock.after(50, () => {
+          ridimensiona = false
+          altezzaChiesta = voluta
+          void apriPannello($, voluta)
+        })
+      }
+    }
+
+    // Se sotto il bordo c'è altro, l'ultima riga visibile lo dice.
+    const { offset, bodyRows } = e.props.scroll
+    const nascoste = totale - offset - bodyRows + 1
+    if (bodyRows > 1 && nascoste > 0) {
+      corpo.splice(offset + bodyRows - 1, 0, (
+        <Text color="suggestion">{taglia(`${spazi(M)}↓ altre ${nascoste} righe: clic sul pannello e frecce`, W)}</Text>
+      ))
     }
 
     return <Box flexDirection="column">{corpo as never[]}</Box>
