@@ -55,6 +55,8 @@ In alto un riepilogo: contesto, ultima richiesta (cache hit, crescita del contes
 3. **Cronologia**: le righe più pesanti e gli ultimi ingressi, con le richieste all'API e quanto ha fatto crescere il contesto ciascuna.
 4. **Limiti**: i limiti d'uso con la barra e l'ora in cui ripartono.
 
+I tasti rispondono quando il pannello ha il focus: senza, una riga sotto il menu ricorda di fare clic sul pannello, oppure di usare `/contesto <sezione>`, che fa la stessa cosa senza focus.
+
 Nel layout fullscreen, da 110 colonne, il pannello sta di fianco alla chat a tutta altezza; altrimenti è un blocco basso sopra il prompt. Il contenuto non supera le 72 colonne.
 
 I pesi delle singole righe sono stime, a circa 4 caratteri per token; il totale del contesto è quello riportato dall'API. Le righe modificate si contano dagli input di Edit e Write.
@@ -77,6 +79,8 @@ La Mod osserva soltanto: ogni hook passa avanti l'evento invariato.
 claude plugin validate .
 claude plugin test .
 ```
+
+`hooks/register.tsx` compone soltanto. Le decisioni sono funzioni pure in `src/` (`testo.ts`, `stime.ts`, `riga.ts` e le viste in `src/vista/`, che ricevono gli elementi e mai `$`); lo stato sta in `src/stato.ts`, l'unico file che legge e scrive gli atom; gli effetti (uso della sessione, `git rev-parse`, apertura del pannello, riga di stato) stanno in `src/effetti.ts`; una funzionalità per file in `src/features/`. Le prove: `tests/caratterizzazione.test.tsx` fissa il comportamento, `tests/ui.test.tsx` controlla il pannello a 40, 80 e 140 colonne sui due schermi.
 
 ## Licenza
 

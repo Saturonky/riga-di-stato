@@ -77,7 +77,7 @@ test('riga di stato essenziale, allarmi solo quando servono, pannello entro la l
   expect(stato).not.toContain('⚠')
   expect(larghezza(stato)).toBeLessThanOrEqual(116)
 
-  for (const colonne of [34, 46, 60, 90]) {
+  for (const colonne of [34, 40, 46, 60, 80, 90, 140]) {
     for (const surface of ['terminal', 'desktop'] as const) {
       const ui = await $.ui.mount({ ...PANNELLO, props: props(colonne), surface })
       expect(await ui.find({ type: 'Text', text: /CONTESTO/ })).toBeDefined()
